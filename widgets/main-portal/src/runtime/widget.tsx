@@ -29,8 +29,8 @@ const APPLICATIONS = [
   {
     id: 'dfisc',
     kind: 'Site',
-    title: 'DFISC',
-    summary: 'Plataforma integrada de fiscalização da AGERSA.',
+    title: 'Plataforma Integrada de Fiscalização',
+    summary: 'Site da AGERSA para a fiscalização e a publicação de dados.',
     href: 'https://portaldaagua.sihs.ba.gov.br/portal/apps/sites/#/dfisc',
     image: 'dfisc.jpg'
   },
@@ -43,6 +43,30 @@ const APPLICATIONS = [
     image: 'pocos.jpg'
   }
 ]
+
+const KindIcon = ({ kind }: { kind: string }) => {
+  if (kind === 'Mapa') {
+    return (
+      <svg viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M8 1.4c-2.3 0-4.1 1.8-4.1 4.1 0 3 4.1 8.9 4.1 8.9s4.1-5.9 4.1-8.9c0-2.3-1.8-4.1-4.1-4.1z" fill="none" stroke="currentColor" strokeWidth="1.4" />
+        <circle cx="8" cy="5.5" r="1.35" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (kind === 'Site') {
+    return (
+      <svg viewBox="0 0 16 16" aria-hidden="true">
+        <rect x="1.8" y="2.2" width="12.4" height="8.2" rx="1.3" fill="none" stroke="currentColor" strokeWidth="1.4" />
+        <path d="M6 13.4h4M8 10.4v3" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      </svg>
+    )
+  }
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M2.2 12.6V8.2M6.1 12.6V5.4M10 12.6V3.2M13.8 12.6V6.8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  )
+}
 
 const Widget = (props: AllWidgetProps<any>) => {
   const rootRef = React.useRef<HTMLElement>(null)
@@ -333,6 +357,54 @@ const Widget = (props: AllWidgetProps<any>) => {
       </div>
     </section>
 
+    <section className="mp-about" aria-labelledby="mp-about-title">
+      <div className="mp-about__wash" aria-hidden="true" />
+      <div className="mp-about__inner">
+        <div className="mp-about__copy">
+          <p data-reveal="about-kicker" className={show('about-kicker', 'mp-about__kicker')}>
+            <span />
+            O que é
+          </p>
+          <h2 id="mp-about-title" data-reveal="about-title" className={show('about-title', 'mp-about__title')}>
+            O Portal da Água reúne a Bahia em um só mapa.
+          </h2>
+          <p data-reveal="about-lead" className={show('about-lead', 'mp-about__lead')}>
+            É o ambiente da Secretaria de Infraestrutura Hídrica e Saneamento para ver,
+            cruzar e acompanhar a água do estado. Mapas, painéis e aplicações deixam
+            de ficar espalhados e passam a contar a mesma história.
+          </p>
+          <p data-reveal="about-text" className={show('about-text', 'mp-about__text')}>
+            Reservatórios, redes, poços e sistemas de abastecimento aparecem com a
+            leitura geográfica que a gestão precisa para planejar, operar e decidir.
+          </p>
+        </div>
+
+        <div data-reveal="about-stage" className={show('about-stage', 'mp-about__stage')} aria-hidden="true">
+          <span className="mp-about__ring" />
+          <span className="mp-about__ring" />
+          <span className="mp-about__ring" />
+          <span className="mp-about__core">
+            <strong>SIHS</strong>
+            <em>Bahia</em>
+          </span>
+        </div>
+
+        <ul className="mp-about__pillars">
+          {[
+            { id: 'about-mapas', title: 'Mapas vivos', text: 'Ativos, redes e territórios hídricos lidos no espaço, não só em planilha.' },
+            { id: 'about-paineis', title: 'Painéis de operação', text: 'Reservatórios, poços e abastecimento acompanhados no ritmo da gestão.' },
+            { id: 'about-decisao', title: 'Decisão informada', text: 'Uma base comum para planejar saneamento e infraestrutura na Bahia.' }
+          ].map((item, index) => (
+            <li key={item.id} data-reveal={item.id} className={show(item.id, 'mp-about__pillar')} style={{ transitionDelay: `${0.08 + index * 0.12}s` }}>
+              <span className="mp-about__index">0{index + 1}</span>
+              <h3>{item.title}</h3>
+              <p>{item.text}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
     <section className="mp-apps" id="mp-apps" aria-labelledby="mp-apps-title">
       <div
         className="mp-apps__inner"
@@ -351,6 +423,7 @@ const Widget = (props: AllWidgetProps<any>) => {
 
         <div
           className={`mp-carousel${dragging ? ' is-dragging' : ''}`}
+          data-reveal="apps-cards"
           style={{ '--drag': `${dragPx}px` } as React.CSSProperties}
           onPointerDown={onCarouselPointerDown}
           onClickCapture={(event) => {
@@ -370,6 +443,7 @@ const Widget = (props: AllWidgetProps<any>) => {
                 key={app.id}
                 className={`mp-app${index === activeApp ? ' is-active' : ''}`}
                 data-distance={distance}
+                data-tone={index % 5}
                 style={{ '--shift': shift } as React.CSSProperties}
                 href={app.href}
                 draggable={false}
@@ -382,6 +456,19 @@ const Widget = (props: AllWidgetProps<any>) => {
                   setActiveApp(index)
                 }}
               >
+                <span
+                  className={`mp-app__rise${revealed['apps-cards'] ? ' is-in' : ''}`}
+                  style={{ transitionDelay: `${distance * 110}ms` }}
+                >
+                <span className="mp-app__mark" aria-hidden="true">
+                  <svg viewBox="0 0 160 160">
+                    <circle cx="118" cy="118" r="26" />
+                    <circle cx="118" cy="118" r="48" />
+                    <circle cx="118" cy="118" r="72" strokeDasharray="3 7" />
+                    <path d="M118 118 L156 86" />
+                    <path d="M6 132c24-16 46 8 74-6" />
+                  </svg>
+                </span>
                 <span className="mp-app__media">
                   <img
                     className="mp-app__cover"
@@ -390,16 +477,24 @@ const Widget = (props: AllWidgetProps<any>) => {
                   />
                 </span>
                 <span className="mp-app__body">
+                  <span className="mp-app__kind">
+                    <span className="mp-app__badge">
+                      <KindIcon kind={app.kind} />
+                    </span>
+                    {app.kind}
+                  </span>
                   <h3>{app.title}</h3>
                   <p>{app.summary}</p>
-                </span>
-                {index === activeApp && (
-                  <span className="mp-app__go" aria-hidden="true">
-                    <svg viewBox="0 0 20 20">
-                      <path d="M8 5l5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                  <span className="mp-app__foot">
+                    <span className="mp-app__open">Acessar</span>
+                    <span className="mp-app__arrow" aria-hidden="true">
+                      <svg viewBox="0 0 16 16">
+                        <path d="M3.5 8h8M8.2 4.6 11.6 8 8.2 11.4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
                   </span>
-                )}
+                </span>
+                </span>
               </a>
             )
           })}

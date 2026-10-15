@@ -210,9 +210,24 @@
 }
 
 @media (max-width: 560px) {
+  .fp-footer,
+  .fp-footer__shell {
+    max-width: 100%;
+    overflow: visible;
+  }
+
   .fp-footer__main {
     grid-template-columns: 1fr;
-    padding: 1.15rem max(0.95rem, env(safe-area-inset-right)) 0.9rem max(0.95rem, env(safe-area-inset-left));
+    gap: 1rem;
+    padding: 1.1rem max(0.95rem, env(safe-area-inset-right)) 0.85rem max(0.95rem, env(safe-area-inset-left));
+  }
+
+  .fp-footer__portal {
+    height: 36px;
+  }
+
+  .fp-footer__brasao {
+    height: 34px;
   }
 
   .fp-footer__title {
@@ -222,7 +237,8 @@
   .fp-footer__bottom {
     flex-direction: column;
     align-items: flex-start;
-    padding: 0.85rem max(0.95rem, env(safe-area-inset-right)) max(0.9rem, env(safe-area-inset-bottom)) max(0.95rem, env(safe-area-inset-left));
+    gap: 0.35rem;
+    padding: 0.8rem max(0.95rem, env(safe-area-inset-right)) max(0.85rem, env(safe-area-inset-bottom)) max(0.95rem, env(safe-area-inset-left));
   }
 
   .fp-footer__desc {

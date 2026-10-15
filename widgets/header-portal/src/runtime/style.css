@@ -522,6 +522,12 @@ a.hp-header__link {
 }
 
 @media (max-width: 720px) {
+  .hp-header,
+  .hp-header__bar {
+    max-width: 100%;
+    overflow: hidden;
+  }
+
   .hp-header__divider,
   .hp-header__titles {
     display: none;
