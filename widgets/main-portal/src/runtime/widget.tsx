@@ -1,48 +1,6 @@
 import { React, type AllWidgetProps } from 'jimu-core'
+import { APPLICATIONS } from './aplicacoes'
 import './style.css'
-
-const APPLICATIONS = [
-  {
-    id: 'reservatorios',
-    kind: 'Dashboard',
-    title: 'Acompanhamento Operacional de Reservatórios',
-    summary: 'Volume, gestão e medição dos reservatórios monitorados na Bahia.',
-    href: 'https://portaldaagua.sihs.ba.gov.br/portal/apps/dashboards/d2aa366ea7a9490b849708a90daf0ee2',
-    image: 'reservatorios.png'
-  },
-  {
-    id: 'ativos',
-    kind: 'Mapa',
-    title: 'Ativos Hídricos Geoespacializados',
-    summary: 'Mapa dos ativos hídricos geoespacializados do Portal da Água.',
-    href: 'https://portaldaagua.sihs.ba.gov.br/portalagua/',
-    image: 'ativos.jpg'
-  },
-  {
-    id: 'abastecimento',
-    kind: 'Dashboard',
-    title: 'Sistemas de Abastecimento de Água - CERB',
-    summary: 'Sistemas de abastecimento de água produzidos pela CERB.',
-    href: 'https://portaldaagua.sihs.ba.gov.br/portal/apps/dashboards/818fa082e0b8412ca6859aa74c2d1592',
-    image: 'abastecimento.png'
-  },
-  {
-    id: 'dfisc',
-    kind: 'Site',
-    title: 'Plataforma Integrada de Fiscalização',
-    summary: 'Site da AGERSA para a fiscalização e a publicação de dados.',
-    href: 'https://portaldaagua.sihs.ba.gov.br/portal/apps/sites/#/dfisc',
-    image: 'dfisc.jpg'
-  },
-  {
-    id: 'pocos',
-    kind: 'Dashboard',
-    title: 'Distribuição da Rede de Poços',
-    summary: 'Mapa e indicadores da rede de poços da Bahia.',
-    href: 'https://portaldaagua.sihs.ba.gov.br/portal/apps/experiencebuilder/experience/?id=34d001de6b934da9af41d41b91cfd72f',
-    image: 'pocos.jpg'
-  }
-]
 
 const KindIcon = ({ kind }: { kind: string }) => {
   if (kind === 'Mapa') {
@@ -58,6 +16,13 @@ const KindIcon = ({ kind }: { kind: string }) => {
       <svg viewBox="0 0 16 16" aria-hidden="true">
         <rect x="1.8" y="2.2" width="12.4" height="8.2" rx="1.3" fill="none" stroke="currentColor" strokeWidth="1.4" />
         <path d="M6 13.4h4M8 10.4v3" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      </svg>
+    )
+  }
+  if (kind === 'Inventário') {
+    return (
+      <svg viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M3 3.2h10M3 8h10M3 12.8h6.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
     )
   }
@@ -80,6 +45,28 @@ const Widget = (props: AllWidgetProps<any>) => {
   const carouselPaused = React.useRef(false)
   const dragRef = React.useRef({ active: false, startX: 0, startY: 0, delta: 0, moved: false, axis: '', pointerType: 'mouse' })
   const appCount = APPLICATIONS.length
+  const shiftMemory = React.useRef<Record<string, number>>({})
+  const [, settleCarousel] = React.useState(0)
+
+  const shiftOf = (index: number) => {
+    let shift = index - activeApp
+    if (shift > appCount / 2) shift -= appCount
+    if (shift < -appCount / 2) shift += appCount
+    return shift
+  }
+
+  React.useLayoutEffect(() => {
+    let jumped = false
+    const next: Record<string, number> = {}
+    APPLICATIONS.forEach((app, index) => {
+      const shift = shiftOf(index)
+      const prev = shiftMemory.current[app.id]
+      if (prev !== undefined && Math.abs(shift - prev) > 1) jumped = true
+      next[app.id] = shift
+    })
+    shiftMemory.current = next
+    if (jumped) settleCarousel((value) => value + 1)
+  }, [activeApp, appCount])
 
   const show = (id: string, className: string) => {
     return `${className} mp-reveal${revealed[id] ? ' mp-reveal--in' : ''}`
@@ -155,14 +142,21 @@ const Widget = (props: AllWidgetProps<any>) => {
     document.getElementById('mp-apps')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
+  const openAbout = () => {
+    document.getElementById('mp-about')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   React.useEffect(() => {
     const id = 'mp-hero-font'
-    if (document.getElementById(id)) return undefined
-    const link = document.createElement('link')
-    link.id = id
-    link.rel = 'stylesheet'
-    link.href = 'https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:ital,opsz,wght@1,8..60,500;1,8..60,600&display=swap'
-    document.head.appendChild(link)
+    const href = 'https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,500;0,8..60,600;1,8..60,500;1,8..60,600&display=swap'
+    let link = document.getElementById(id) as HTMLLinkElement | null
+    if (!link) {
+      link = document.createElement('link')
+      link.id = id
+      link.rel = 'stylesheet'
+      document.head.appendChild(link)
+    }
+    link.href = href
     return undefined
   }, [])
 
@@ -329,26 +323,111 @@ const Widget = (props: AllWidgetProps<any>) => {
         style={{ backgroundImage: `url("${heroUrl}")` }}
         aria-hidden="true"
       />
-      <div className="mp-hero__shade" aria-hidden="true" />
+      <div className="mp-hero__veil" aria-hidden="true" />
       <canvas ref={canvasRef} className="mp-hero__trail" aria-hidden="true" />
       <div ref={cursorRef} className="mp-water-cursor" aria-hidden="true" />
-      <div className="mp-hero__copy">
-        <p data-reveal="hero-kicker" className={show('hero-kicker', 'mp-hero__kicker')}>
-          <span />
-          Portal da Água • Bahia
-        </p>
-        <h1 data-reveal="hero-title" className={show('hero-title', 'mp-hero__title')}>
-          A água da Bahia,
-          <br />
-          em perspectiva.
-        </h1>
-        <p data-reveal="hero-lead" className={show('hero-lead', 'mp-hero__lead')}>
-          Mapas e aplicações geoespaciais para explorar informações sobre recursos
-          hídricos, saneamento e infraestrutura.
-        </p>
-        <div data-reveal="hero-actions" className={show('hero-actions', 'mp-hero__actions')}>
-          <button type="button" className="mp-hero__btn mp-hero__btn--solid" onClick={openApplications}>
-            Explorar aplicações
+      <div className="mp-hero__layout">
+        <div className="mp-hero__copy">
+          <p data-reveal="hero-kicker" className={show('hero-kicker', 'mp-hero__kicker')}>
+            Informação · Gestão · Sustentabilidade
+          </p>
+          <h1 data-reveal="hero-title" className={show('hero-title', 'mp-hero__title')}>
+            Água que
+            <br />
+            <em>move a Bahia</em>
+          </h1>
+          <p data-reveal="hero-lead" className={show('hero-lead', 'mp-hero__lead')}>
+            Dados, tecnologia e planejamento para a infraestrutura hídrica
+            e o saneamento da Bahia.
+          </p>
+          <div data-reveal="hero-actions" className={show('hero-actions', 'mp-hero__actions')}>
+            <button type="button" className="mp-hero__btn mp-hero__btn--solid" onClick={openApplications}>
+              Explorar o Portal da Água
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M4 10h11M11 6l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <button type="button" className="mp-hero__btn mp-hero__btn--ghost" onClick={openAbout}>
+              Conheça o Instituto
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M10 4v12M4 10h12" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section className="mp-about" id="mp-about" aria-labelledby="mp-about-title">
+      <ul className="mp-themes">
+        {[
+          {
+            title: 'Infraestrutura Hídrica',
+            text: 'Planos, obras e investimentos para a segurança hídrica.',
+            icon: 'drop'
+          },
+          {
+            title: 'Abastecimento de Água',
+            text: 'Sistemas que levam qualidade de vida às pessoas.',
+            icon: 'tap'
+          },
+          {
+            title: 'Esgotamento Sanitário',
+            text: 'Saneamento para cidades mais saudáveis.',
+            icon: 'city'
+          },
+          {
+            title: 'Atlas',
+            text: 'Informações geoespaciais e dados estratégicos.',
+            icon: 'book'
+          }
+        ].map((item) => (
+          <li key={item.title} className="mp-themes__card">
+            <span className="mp-themes__icon" aria-hidden="true">
+              {item.icon === 'drop' && (
+                <svg viewBox="0 0 24 24"><path d="M12 3s6 6.2 6 10.2A6 6 0 1 1 6 13.2C6 9.2 12 3 12 3z" fill="none" stroke="currentColor" strokeWidth="1.6" /></svg>
+              )}
+              {item.icon === 'tap' && (
+                <svg viewBox="0 0 24 24"><path d="M8 8V5.5A2.5 2.5 0 0 1 10.5 3H14M8 8h8v3a4 4 0 0 1-8 0V8zM12 15v6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
+              )}
+              {item.icon === 'city' && (
+                <svg viewBox="0 0 24 24"><path d="M4 20V9l5-3v14M9 20V6l6-3v17M15 20v-8h5v8M4 20h16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>
+              )}
+              {item.icon === 'book' && (
+                <svg viewBox="0 0 24 24"><path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v16H7.5A2.5 2.5 0 0 0 5 21.5V5.5zM5 19.2A2.5 2.5 0 0 1 7.5 17H19" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>
+              )}
+            </span>
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+          </li>
+        ))}
+      </ul>
+
+      <div className="mp-about__inner">
+        <div
+          className="mp-about__photo"
+          style={{ backgroundImage: `url("${heroUrl}")` }}
+          role="img"
+          aria-label="Litoral da Bahia"
+        />
+        <div className="mp-about__copy">
+          <p data-reveal="about-kicker" className={show('about-kicker', 'mp-about__kicker')}>
+            Sobre o instituto
+          </p>
+          <h2 id="mp-about-title" data-reveal="about-title" className={show('about-title', 'mp-about__title')}>
+            Trabalhando por um futuro mais seguro
+          </h2>
+          <p data-reveal="about-lead" className={show('about-lead', 'mp-about__lead')}>
+            A Secretaria de Infraestrutura Hídrica e Saneamento reúne no Portal da Água
+            os mapas, painéis e aplicações que acompanham a água do estado.
+          </p>
+          <p data-reveal="about-text" className={show('about-text', 'mp-about__text')}>
+            Reservatórios, redes, poços e sistemas de abastecimento passam a contar
+            a mesma história, com a leitura geográfica que a gestão precisa para
+            planejar, operar e decidir.
+          </p>
+          <button type="button" className="mp-about__more" onClick={openApplications}>
+            Saiba mais sobre o Portal
             <svg viewBox="0 0 20 20" aria-hidden="true">
               <path d="M4 10h11M11 6l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -357,51 +436,42 @@ const Widget = (props: AllWidgetProps<any>) => {
       </div>
     </section>
 
-    <section className="mp-about" aria-labelledby="mp-about-title">
-      <div className="mp-about__wash" aria-hidden="true" />
-      <div className="mp-about__inner">
-        <div className="mp-about__copy">
-          <p data-reveal="about-kicker" className={show('about-kicker', 'mp-about__kicker')}>
-            <span />
-            O que é
+    <section className="mp-feature" aria-labelledby="mp-feature-title">
+      <div className="mp-feature__card">
+        <a
+          className="mp-feature__shot"
+          href="https://portaldaagua.sihs.ba.gov.br/portal/apps/experiencebuilder/experience/?id=64cac37233d342e98fab036d397a93cd&page=Inicio"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Abrir Inventário de Infraestrutura Hídrica e Saneamento"
+        >
+          <img src={`${props.context.folderUrl}dist/runtime/assets/inventario.jpg?v=2`} alt="" />
+        </a>
+        <div className="mp-feature__copy">
+          <p data-reveal="feature-kicker" className={show('feature-kicker', 'mp-feature__kicker')}>
+            Aplicação em Destaque
           </p>
-          <h2 id="mp-about-title" data-reveal="about-title" className={show('about-title', 'mp-about__title')}>
-            O Portal da Água reúne a Bahia em um só mapa.
+          <h2 id="mp-feature-title" data-reveal="feature-title" className={show('feature-title', '')}>
+            Inventário de Infraestrutura Hídrica e Saneamento
           </h2>
-          <p data-reveal="about-lead" className={show('about-lead', 'mp-about__lead')}>
-            É o ambiente da Secretaria de Infraestrutura Hídrica e Saneamento para ver,
-            cruzar e acompanhar a água do estado. Mapas, painéis e aplicações deixam
-            de ficar espalhados e passam a contar a mesma história.
+          <p data-reveal="feature-text" className={show('feature-text', 'mp-feature__text')}>
+            Reúne barragens, sistemas de abastecimento e poços da Bahia num só painel.
+            Territórios, municípios e a região semiárida aparecem junto da infraestrutura
+            hídrica do estado.
           </p>
-          <p data-reveal="about-text" className={show('about-text', 'mp-about__text')}>
-            Reservatórios, redes, poços e sistemas de abastecimento aparecem com a
-            leitura geográfica que a gestão precisa para planejar, operar e decidir.
-          </p>
+          <a
+            data-reveal="feature-link"
+            className={show('feature-link', 'mp-feature__go')}
+            href="https://portaldaagua.sihs.ba.gov.br/portal/apps/experiencebuilder/experience/?id=64cac37233d342e98fab036d397a93cd&page=Inicio"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Acessar aplicação
+            <svg viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M4 10h11M11 6l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </a>
         </div>
-
-        <div data-reveal="about-stage" className={show('about-stage', 'mp-about__stage')} aria-hidden="true">
-          <span className="mp-about__ring" />
-          <span className="mp-about__ring" />
-          <span className="mp-about__ring" />
-          <span className="mp-about__core">
-            <strong>SIHS</strong>
-            <em>Bahia</em>
-          </span>
-        </div>
-
-        <ul className="mp-about__pillars">
-          {[
-            { id: 'about-mapas', title: 'Mapas vivos', text: 'Ativos, redes e territórios hídricos lidos no espaço, não só em planilha.' },
-            { id: 'about-paineis', title: 'Painéis de operação', text: 'Reservatórios, poços e abastecimento acompanhados no ritmo da gestão.' },
-            { id: 'about-decisao', title: 'Decisão informada', text: 'Uma base comum para planejar saneamento e infraestrutura na Bahia.' }
-          ].map((item, index) => (
-            <li key={item.id} data-reveal={item.id} className={show(item.id, 'mp-about__pillar')} style={{ transitionDelay: `${0.08 + index * 0.12}s` }}>
-              <span className="mp-about__index">0{index + 1}</span>
-              <h3>{item.title}</h3>
-              <p>{item.text}</p>
-            </li>
-          ))}
-        </ul>
       </div>
     </section>
 
@@ -434,14 +504,14 @@ const Widget = (props: AllWidgetProps<any>) => {
           }}
         >
           {APPLICATIONS.map((app, index) => {
-            let shift = index - activeApp
-            if (shift > appCount / 2) shift -= appCount
-            if (shift < -appCount / 2) shift += appCount
+            const shift = shiftOf(index)
             const distance = Math.abs(shift)
+            const prev = shiftMemory.current[app.id]
+            const jump = prev !== undefined && Math.abs(shift - prev) > 1
             return (
               <a
                 key={app.id}
-                className={`mp-app${index === activeApp ? ' is-active' : ''}`}
+                className={`mp-app${index === activeApp ? ' is-active' : ''}${jump ? ' is-jump' : ''}`}
                 data-distance={distance}
                 data-tone={index % 5}
                 style={{ '--shift': shift } as React.CSSProperties}
@@ -478,6 +548,7 @@ const Widget = (props: AllWidgetProps<any>) => {
                 </span>
                 <span className="mp-app__body">
                   <span className="mp-app__kind">
+                    <span className="mp-app__rule" />
                     <span className="mp-app__badge">
                       <KindIcon kind={app.kind} />
                     </span>
@@ -486,7 +557,7 @@ const Widget = (props: AllWidgetProps<any>) => {
                   <h3>{app.title}</h3>
                   <p>{app.summary}</p>
                   <span className="mp-app__foot">
-                    <span className="mp-app__open">Acessar</span>
+                    <span className="mp-app__open">Acessar aplicação</span>
                     <span className="mp-app__arrow" aria-hidden="true">
                       <svg viewBox="0 0 16 16">
                         <path d="M3.5 8h8M8.2 4.6 11.6 8 8.2 11.4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
