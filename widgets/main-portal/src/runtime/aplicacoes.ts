@@ -30,10 +30,10 @@ export const APPLICATIONS = [
   {
     id: 'abastecimento',
     kind: 'Dashboard',
-    title: 'Sistemas de Abastecimento de Água - CERB',
-    summary: 'Sistemas de abastecimento de água produzidos pela CERB.',
-    href: 'https://portaldaagua.sihs.ba.gov.br/portal/apps/dashboards/818fa082e0b8412ca6859aa74c2d1592',
-    image: 'abastecimento.png'
+    title: 'Sistemas de Abastecimento de Água',
+    summary: 'Mapa e distribuição dos sistemas de abastecimento de água na Bahia.',
+    href: 'https://portaldaagua.sihs.ba.gov.br/portal/apps/experiencebuilder/experience/?id=092b6dc2b68749eea248e62943a5935e',
+    image: 'abastecimento.jpg'
   },
   {
     id: 'dfisc',

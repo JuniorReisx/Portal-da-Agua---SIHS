@@ -1,0 +1,21 @@
+{
+  "name": "main-portal-restrito",
+  "label": "Main Área Restrita",
+  "type": "widget",
+  "version": "1.17.0",
+  "exbVersion": "1.17.0",
+  "author": "SIHS",
+  "description": "Corpo da área restrita do Portal da Água",
+  "copyright": "",
+  "license": "",
+  "properties": {
+    "hasSettingPage": false,
+    "coverLayoutBackground": true,
+    "defaultOffPanel": true
+  },
+  "translatedLocales": ["pt-br"],
+  "defaultSize": {
+    "width": 1280,
+    "height": 720
+  }
+}

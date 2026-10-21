@@ -1,0 +1,19 @@
+{
+  "name": "footer-portal-restrito",
+  "label": "Footer Área Restrita",
+  "type": "widget",
+  "version": "1.17.0",
+  "exbVersion": "1.17.0",
+  "author": "Your Name",
+  "description": "Footer da área restrita do Portal da Água",
+  "copyright": "",
+  "license": "",
+  "properties": {
+    "cover": true
+  },
+  "translatedLocales": ["en"],
+  "defaultSize": {
+    "width": 1280,
+    "height": 220
+  }
+}

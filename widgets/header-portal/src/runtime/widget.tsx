@@ -3,12 +3,13 @@ import './style.css'
 
 const HOME_PAGE_ID = 'page_45'
 const PORTAL_SITE_URL = 'https://portaldaagua.sihs.ba.gov.br/'
+const RESTRICTED_URL = 'https://portaldaagua.sihs.ba.gov.br/portal/apps/experiencebuilder/experience?id=881ff68da9ff4f2ab32eb141a0eccf7b'
 
 const getPages = () => getAppStore().getState()?.appConfig?.pages
 
 const findPageIdByLabel = (label: string): string | undefined => {
   const pages = getPages()
-  if (!pages) return undefined
+  if (!pages || typeof pages !== 'object') return undefined
   const target = label.trim().toLowerCase()
   return Object.keys(pages).find((id) => {
     return String(pages[id]?.label || '').trim().toLowerCase() === target
@@ -19,6 +20,32 @@ const pageExists = (pageId?: string): boolean => {
   if (!pageId) return false
   const pages = getPages()
   return !!(pages && pages[pageId])
+}
+
+const findDefaultPageId = (): string | undefined => {
+  const pages = getPages()
+  if (!pages || typeof pages !== 'object') return undefined
+  return Object.keys(pages).find((id) => pages[id]?.isDefault)
+}
+
+const homePageId = (): string | undefined => {
+  return (
+    findPageIdByLabel('Início') ||
+    findPageIdByLabel('Ínicio') ||
+    findPageIdByLabel('Inicio') ||
+    findPageIdByLabel('Main') ||
+    findDefaultPageId() ||
+    (pageExists(HOME_PAGE_ID) ? HOME_PAGE_ID : undefined) ||
+    (pageExists('page_0') ? 'page_0' : undefined)
+  )
+}
+
+const aboutPageId = (): string | undefined => {
+  return findPageIdByLabel('Sobre') || (pageExists('page_2') ? 'page_2' : undefined)
+}
+
+const assistantPageId = (): string | undefined => {
+  return findPageIdByLabel('Assistente') || findPageIdByLabel('Assistente pessoal')
 }
 
 const scrollPageToTop = () => {
@@ -37,6 +64,10 @@ const Widget = (props: AllWidgetProps<any>) => {
   const heroLogoUrl = `${props.context.folderUrl}dist/runtime/assets/portal-hero.png`
   const brasaoUrl = `${props.context.folderUrl}dist/runtime/assets/brasao.png`
   const [scrolled, setScrolled] = React.useState(false)
+  const [currentPageId, setCurrentPageId] = React.useState<string | undefined>(
+    () => getAppStore().getState()?.appRuntimeInfo?.currentPageId
+  )
+  const [menuOpen, setMenuOpen] = React.useState(false)
   const scrolledRef = React.useRef(false)
 
   React.useEffect(() => {
@@ -80,17 +111,32 @@ const Widget = (props: AllWidgetProps<any>) => {
     }
   }, [])
 
-  const goHome = () => {
-    const pageId =
-      findPageIdByLabel('Início') ||
-      findPageIdByLabel('Ínicio') ||
-      findPageIdByLabel('Inicio') ||
-      (pageExists(HOME_PAGE_ID) ? HOME_PAGE_ID : undefined)
-    if (!pageId) return
+  React.useEffect(() => {
+    let current = getAppStore().getState()?.appRuntimeInfo?.currentPageId
+    setCurrentPageId(current)
+    return getAppStore().subscribe(() => {
+      const next = getAppStore().getState()?.appRuntimeInfo?.currentPageId
+      if (next === current) return
+      current = next
+      setCurrentPageId(next)
+    })
+  }, [])
+
+  const openPage = (pageId?: string) => {
+    setMenuOpen(false)
+    if (!pageId || !pageExists(pageId)) return
+    if (pageId === currentPageId) {
+      scrollPageToTop()
+      return
+    }
     UrlManager.getInstance().changePage(pageId)
     requestAnimationFrame(() => scrollPageToTop())
     setTimeout(scrollPageToTop, 120)
   }
+
+  const homeId = homePageId()
+  const sobreId = aboutPageId()
+  const assistenteId = assistantPageId()
 
   return (
     <div className={`hp-header jimu-widget${scrolled ? ' hp-header--scrolled' : ''}`}>
@@ -126,7 +172,7 @@ const Widget = (props: AllWidgetProps<any>) => {
           <button
             type="button"
             className="hp-header__titles-btn"
-            onClick={goHome}
+            onClick={() => openPage(homeId)}
             aria-label="Voltar para a tela inicial"
             title="Voltar para a tela inicial"
           >
@@ -137,19 +183,92 @@ const Widget = (props: AllWidgetProps<any>) => {
           </button>
         </div>
 
-        <button
-          type="button"
+        <div className="hp-header__end">
+          <nav className="hp-header__nav" aria-label="Páginas">
+            <button
+              type="button"
+              className={`hp-header__link${homeId && currentPageId === homeId ? ' is-active' : ''}`}
+              aria-current={homeId && currentPageId === homeId ? 'page' : undefined}
+              onClick={() => openPage(homeId)}
+            >
+              Início
+            </button>
+            <button
+              type="button"
+              className={`hp-header__link${sobreId && currentPageId === sobreId ? ' is-active' : ''}`}
+              aria-current={sobreId && currentPageId === sobreId ? 'page' : undefined}
+              onClick={() => openPage(sobreId)}
+            >
+              Sobre
+            </button>
+            <button
+              type="button"
+              className={`hp-header__link${assistenteId && currentPageId === assistenteId ? ' is-active' : ''}`}
+              aria-current={assistenteId && currentPageId === assistenteId ? 'page' : undefined}
+              onClick={() => openPage(assistenteId)}
+            >
+              Assistente
+            </button>
+          </nav>
+          <button
+            type="button"
+            className={`hp-header__menu-btn${menuOpen ? ' is-open' : ''}`}
+            aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <span />
+          </button>
+        <a
           className="hp-header__restricted"
+          href={RESTRICTED_URL}
           aria-label="Área Restrita"
-          onClick={(event) => event.preventDefault()}
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
             <path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
           </svg>
           <span className="hp-header__restricted-label">Área Restrita</span>
-        </button>
+        </a>
+        </div>
       </header>
+      {menuOpen && (
+        <button
+          type="button"
+          className="hp-header__backdrop"
+          aria-label="Fechar menu"
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
+      <nav className={`hp-header__drawer${menuOpen ? ' is-open' : ''}`} aria-label="Menu">
+        <div className="hp-header__drawer-head">
+          <strong>Menu</strong>
+          <button type="button" className="hp-header__drawer-close" aria-label="Fechar" onClick={() => setMenuOpen(false)}>
+            ×
+          </button>
+        </div>
+        <button
+          type="button"
+          className={`hp-header__link${homeId && currentPageId === homeId ? ' is-active' : ''}`}
+          onClick={() => openPage(homeId)}
+        >
+          Início
+        </button>
+        <button
+          type="button"
+          className={`hp-header__link${sobreId && currentPageId === sobreId ? ' is-active' : ''}`}
+          onClick={() => openPage(sobreId)}
+        >
+          Sobre
+        </button>
+        <button
+          type="button"
+          className={`hp-header__link${assistenteId && currentPageId === assistenteId ? ' is-active' : ''}`}
+          onClick={() => openPage(assistenteId)}
+        >
+          Assistente
+        </button>
+      </nav>
     </div>
   )
 }

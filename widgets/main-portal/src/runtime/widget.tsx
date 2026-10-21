@@ -38,6 +38,7 @@ const Widget = (props: AllWidgetProps<any>) => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null)
   const cursorRef = React.useRef<HTMLDivElement>(null)
   const heroUrl = `${props.context.folderUrl}dist/runtime/assets/hero.jpg?v=3`
+  const heroMapUrl = `${props.context.folderUrl}dist/runtime/assets/hero-bahia.jpg?v=1`
   const [revealed, setRevealed] = React.useState<Record<string, boolean>>({})
   const [activeApp, setActiveApp] = React.useState(0)
   const [dragPx, setDragPx] = React.useState(0)
@@ -320,7 +321,7 @@ const Widget = (props: AllWidgetProps<any>) => {
     <section ref={rootRef} className="mp-hero">
       <div
         className="mp-hero__photo"
-        style={{ backgroundImage: `url("${heroUrl}")` }}
+        style={{ backgroundImage: `url("${heroMapUrl}")` }}
         aria-hidden="true"
       />
       <div className="mp-hero__veil" aria-hidden="true" />
@@ -332,9 +333,7 @@ const Widget = (props: AllWidgetProps<any>) => {
             Informação · Gestão · Sustentabilidade
           </p>
           <h1 data-reveal="hero-title" className={show('hero-title', 'mp-hero__title')}>
-            Água que
-            <br />
-            <em>move a Bahia</em>
+            Plataforma de Apoio à Gestão Integrada da Infraestrutura Hídrica e Saneamento da Bahia
           </h1>
           <p data-reveal="hero-lead" className={show('hero-lead', 'mp-hero__lead')}>
             Dados, tecnologia e planejamento para a infraestrutura hídrica

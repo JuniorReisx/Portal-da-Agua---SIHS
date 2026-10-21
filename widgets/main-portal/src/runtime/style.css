@@ -21,7 +21,7 @@
   right: 0;
   width: 62%;
   height: 100%;
-  background-position: center right;
+  background-position: 70% center;
   background-size: cover;
   background-repeat: no-repeat;
   pointer-events: none;
@@ -123,14 +123,14 @@
 
 .mp-hero__title {
   margin: 0;
-  max-width: 12ch;
+  max-width: 16em;
   color: #ffffff;
   font-family: "Source Serif 4", "Iowan Old Style", Palatino, Georgia, serif;
   font-style: normal;
   font-weight: 500;
-  font-size: clamp(3.45rem, 6vw, 5.2rem);
+  font-size: clamp(1.85rem, 3.1vw, 2.7rem);
   letter-spacing: -0.03em;
-  line-height: 0.98;
+  line-height: 1.12;
 }
 
 .mp-hero__title em {
@@ -618,7 +618,7 @@ a.mp-feature__go:focus-visible {
 }
 
 .mp-carousel {
-  --step: calc(25% - 78px);
+  --step: clamp(210px, 17vw, 248px);
   position: relative;
   height: 530px;
   margin-top: 1.8rem;
@@ -1076,8 +1076,9 @@ a.mp-app:hover p {
   }
 
   .mp-hero__title {
-    font-size: clamp(2.55rem, 11vw, 3.4rem);
-    line-height: 1.02;
+    max-width: none;
+    font-size: clamp(1.55rem, 6.2vw, 2rem);
+    line-height: 1.16;
   }
 
   .mp-hero__lead {
@@ -1094,5 +1095,17 @@ a.mp-app:hover p {
   .mp-hero__btn {
     width: 100%;
     min-height: 48px;
+  }
+
+  .mp-themes {
+    grid-template-columns: 1fr;
+  }
+
+  .mp-feature h2 {
+    font-size: 1.45rem;
+  }
+
+  .mp-hero__layout {
+    width: calc(100% - 1.4rem);
   }
 }
