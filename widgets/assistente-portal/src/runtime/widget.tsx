@@ -1,8 +1,6 @@
 import { React, type AllWidgetProps } from 'jimu-core'
 import './style.css'
 
-const API_URL = 'https://sihs-ia-inventario.onrender.com/api/chat'
-
 const APPS = [
   {
     id: 'reservatorios',
@@ -48,11 +46,58 @@ const APPS = [
   }
 ]
 
-const STARTERS = [
-  'Quero ver os poços da Bahia',
-  'Onde acompanho o volume dos reservatórios?',
-  'Preciso dos sistemas de abastecimento',
-  'Não sei por onde começar'
+const STARTERS = ['pocos', 'reservatorios', 'abastecimento', 'inventario', 'comecar']
+
+const QUESTIONS = [
+  {
+    id: 'pocos',
+    ask: 'Onde vejo os poços da Bahia?',
+    answer: 'O mapa e os indicadores da rede de poços estão no painel Distribuição da Rede de Poços.',
+    appId: 'pocos',
+    next: ['reservatorios', 'inventario', 'ativos']
+  },
+  {
+    id: 'reservatorios',
+    ask: 'Como acompanho o volume dos reservatórios?',
+    answer: 'Volume, gestão e medição dos reservatórios monitorados ficam no Acompanhamento Operacional de Reservatórios.',
+    appId: 'reservatorios',
+    next: ['pocos', 'abastecimento', 'inventario']
+  },
+  {
+    id: 'abastecimento',
+    ask: 'Onde estão os sistemas de abastecimento?',
+    answer: 'O mapa dos sistemas que levam água às cidades está em Sistemas de Abastecimento de Água.',
+    appId: 'abastecimento',
+    next: ['reservatorios', 'inventario', 'ativos']
+  },
+  {
+    id: 'ativos',
+    ask: 'Tem um mapa com todos os ativos hídricos?',
+    answer: 'Sim. Reservatórios, poços e demais estruturas mapeadas aparecem em Ativos Hídricos Geoespacializados.',
+    appId: 'ativos',
+    next: ['reservatorios', 'pocos', 'dfisc']
+  },
+  {
+    id: 'inventario',
+    ask: 'Onde consulto barragens, poços e abastecimento juntos?',
+    answer: 'Os três aparecem no Inventário de Infraestrutura Hídrica e Saneamento, no mesmo painel.',
+    appId: 'inventario',
+    next: ['reservatorios', 'pocos', 'abastecimento']
+  },
+  {
+    id: 'dfisc',
+    ask: 'Onde fica a fiscalização?',
+    answer: 'A fiscalização e a publicação de dados da AGERSA ficam na Plataforma Integrada de Fiscalização.',
+    appId: 'dfisc',
+    next: ['inventario', 'reservatorios', 'comecar']
+  },
+  {
+    id: 'comecar',
+    ask: 'Por onde eu começo?',
+    answer: 'Comece pelo inventário: ele junta barragens, abastecimento e poços. Se quiser um tema só, escolha a próxima pergunta.',
+    appId: 'inventario',
+    next: ['reservatorios', 'pocos', 'abastecimento', 'dfisc']
+  }
 ]
 
 type ChatMessage = {
@@ -61,31 +106,20 @@ type ChatMessage = {
   appId?: string
 }
 
-const findApp = (id?: string) => APPS.find((app) => app.id === id)
+const GREETING = 'Olá, eu sou o Gil. Escolha uma pergunta e eu indico a aplicação pública certa.'
 
-const readReply = (text: string) => {
-  const match = text.match(/SUGESTAO:\s*([a-z0-9-]+)/i)
-  const content = text.replace(/\n?SUGESTAO:\s*\S+\s*$/i, '').trim()
-  const id = match?.[1]?.toLowerCase()
-  return {
-    content: content || text.trim(),
-    appId: id && id !== 'nenhuma' ? id : undefined
-  }
-}
+const findApp = (id?: string) => APPS.find((app) => app.id === id)
 
 const Widget = (props: AllWidgetProps<any>) => {
   const logoUrl = `${props.context.folderUrl}dist/runtime/assets/logo-portal.png`
   const [messages, setMessages] = React.useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: 'Olá, eu sou o Gil. Me diga o que você quer consultar na Bahia e eu indico a aplicação pública mais adequada.'
+      content: GREETING
     }
   ])
-  const [draft, setDraft] = React.useState('')
-  const [busy, setBusy] = React.useState(false)
-  const [error, setError] = React.useState('')
+  const [askedId, setAskedId] = React.useState('')
   const listRef = React.useRef<HTMLDivElement>(null)
-  const userSpoke = messages.some((item) => item.role === 'user')
 
   React.useEffect(() => {
     const id = 'ap-font'
@@ -104,51 +138,44 @@ const Widget = (props: AllWidgetProps<any>) => {
     const list = listRef.current
     if (!list) return
     list.scrollTop = list.scrollHeight
-  }, [messages, busy])
+  }, [messages])
 
-  const send = async (text: string) => {
-    const message = text.trim()
-    if (!message || busy) return
-    const history = messages.slice(-8).map((item) => ({
-      role: item.role,
-      content: item.content
-    }))
-    setMessages((current) => [...current, { role: 'user', content: message }])
-    setDraft('')
-    setError('')
-    setBusy(true)
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, history })
-      })
-      const data = await response.json()
-      if (!response.ok) throw new Error(data?.error || 'Falha ao consultar o assistente.')
-      const reply = readReply(String(data?.response || ''))
-      setMessages((current) => [...current, { role: 'assistant', ...reply }])
-    } catch {
-      setError('Não consegui responder agora. Tente de novo em instantes.')
-    } finally {
-      setBusy(false)
-    }
+  const asked = QUESTIONS.find((item) => item.id === askedId)
+  const visible = (asked ? asked.next : STARTERS)
+    .map((id) => QUESTIONS.find((item) => item.id === id))
+    .filter((item): item is typeof QUESTIONS[number] => Boolean(item))
+
+  const started = askedId !== '' || messages.length > 1
+
+  const reset = () => {
+    setAskedId('')
+    setMessages([{ role: 'assistant', content: GREETING }])
   }
 
-  const onSubmit = (event: React.FormEvent) => {
-    event.preventDefault()
-    send(draft)
+  const ask = (questionId: string) => {
+    const question = QUESTIONS.find((item) => item.id === questionId)
+    if (!question || questionId === askedId) return
+    setAskedId(questionId)
+    setMessages((current) => [
+      ...current,
+      { role: 'user', content: question.ask },
+      { role: 'assistant', content: question.answer, appId: question.appId }
+    ])
   }
 
   return (
     <div className="ap-page jimu-widget">
       <div className="ap-shell">
-        <section className="ap-chat" aria-label="Conversa com o Gil">
+        <section className="ap-chat" aria-label="Perguntas do assistente Gil">
           <header className="ap-chat__bar">
             <img src={logoUrl} alt="" />
             <div>
               <strong>Gil</strong>
               <span>Assistente do Portal da Água</span>
             </div>
+            <button className="ap-reset" type="button" onClick={reset} disabled={!started}>
+              Limpar conversa
+            </button>
           </header>
 
           <div className="ap-log" ref={listRef}>
@@ -177,49 +204,24 @@ const Widget = (props: AllWidgetProps<any>) => {
                 </article>
               )
             })}
-
-            {!userSpoke && (
-              <div className="ap-starters">
-                {STARTERS.map((item) => (
-                  <button key={item} type="button" onClick={() => send(item)} disabled={busy}>
-                    {item}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {busy && (
-              <article className="ap-msg ap-msg--assistant">
-                <img className="ap-msg__mark" src={logoUrl} alt="" />
-                <div className="ap-msg__body">
-                  <span className="ap-msg__who">Gil</span>
-                  <p className="ap-typing" aria-label="Gil está respondendo">
-                    <span />
-                    <span />
-                    <span />
-                  </p>
-                </div>
-              </article>
-            )}
           </div>
 
-          {error && <p className="ap-error">{error}</p>}
-
-          <form className="ap-form" onSubmit={onSubmit}>
-            <label className="ap-sr" htmlFor="ap-question">Sua pergunta</label>
-            <input
-              id="ap-question"
-              value={draft}
-              placeholder="Pergunte sobre poços, reservatórios, abastecimento..."
-              onChange={(event) => setDraft(event.target.value)}
-              disabled={busy}
-            />
-            <button type="submit" disabled={busy || !draft.trim()} aria-label="Enviar">
-              <svg viewBox="0 0 20 20" aria-hidden="true">
-                <path d="M4 10h11M11 6l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          </form>
+          <div className="ap-questions">
+            <p className="ap-questions__label" id="ap-questions-label">
+              {asked ? 'Agora você pode perguntar' : 'Perguntas'}
+            </p>
+            <div className="ap-starters" role="group" aria-labelledby="ap-questions-label">
+              {visible.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => ask(item.id)}
+                >
+                  {item.ask}
+                </button>
+              ))}
+            </div>
+          </div>
         </section>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { React, type AllWidgetProps, UrlManager, getAppStore } from 'jimu-core'
+import { createPortal } from 'react-dom'
 import './style.css'
 
 const HOME_PAGE_ID = 'page_45'
@@ -232,43 +233,48 @@ const Widget = (props: AllWidgetProps<any>) => {
         </a>
         </div>
       </header>
-      {menuOpen && (
-        <button
-          type="button"
-          className="hp-header__backdrop"
-          aria-label="Fechar menu"
-          onClick={() => setMenuOpen(false)}
-        />
+      {window.jimuConfig?.isInBuilder ? null : createPortal(
+        <>
+          {menuOpen && (
+            <button
+              type="button"
+              className="hp-header__backdrop"
+              aria-label="Fechar menu"
+              onClick={() => setMenuOpen(false)}
+            />
+          )}
+          <nav className={`hp-header__drawer${menuOpen ? ' is-open' : ''}`} aria-label="Menu">
+            <div className="hp-header__drawer-head">
+              <strong>Menu</strong>
+              <button type="button" className="hp-header__drawer-close" aria-label="Fechar" onClick={() => setMenuOpen(false)}>
+                ×
+              </button>
+            </div>
+            <button
+              type="button"
+              className={`hp-header__link${homeId && currentPageId === homeId ? ' is-active' : ''}`}
+              onClick={() => openPage(homeId)}
+            >
+              Início
+            </button>
+            <button
+              type="button"
+              className={`hp-header__link${sobreId && currentPageId === sobreId ? ' is-active' : ''}`}
+              onClick={() => openPage(sobreId)}
+            >
+              Sobre
+            </button>
+            <button
+              type="button"
+              className={`hp-header__link${assistenteId && currentPageId === assistenteId ? ' is-active' : ''}`}
+              onClick={() => openPage(assistenteId)}
+            >
+              Assistente
+            </button>
+          </nav>
+        </>,
+        document.body
       )}
-      <nav className={`hp-header__drawer${menuOpen ? ' is-open' : ''}`} aria-label="Menu">
-        <div className="hp-header__drawer-head">
-          <strong>Menu</strong>
-          <button type="button" className="hp-header__drawer-close" aria-label="Fechar" onClick={() => setMenuOpen(false)}>
-            ×
-          </button>
-        </div>
-        <button
-          type="button"
-          className={`hp-header__link${homeId && currentPageId === homeId ? ' is-active' : ''}`}
-          onClick={() => openPage(homeId)}
-        >
-          Início
-        </button>
-        <button
-          type="button"
-          className={`hp-header__link${sobreId && currentPageId === sobreId ? ' is-active' : ''}`}
-          onClick={() => openPage(sobreId)}
-        >
-          Sobre
-        </button>
-        <button
-          type="button"
-          className={`hp-header__link${assistenteId && currentPageId === assistenteId ? ' is-active' : ''}`}
-          onClick={() => openPage(assistenteId)}
-        >
-          Assistente
-        </button>
-      </nav>
     </div>
   )
 }

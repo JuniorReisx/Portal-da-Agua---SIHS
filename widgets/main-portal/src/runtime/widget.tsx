@@ -1,5 +1,7 @@
-import { React, type AllWidgetProps } from 'jimu-core'
+import { React, type AllWidgetProps, UrlManager, getAppStore } from 'jimu-core'
 import { APPLICATIONS } from './aplicacoes'
+import HomeInfo from './home-info'
+import LightWater from '../../../shared/light-water'
 import './style.css'
 
 const KindIcon = ({ kind }: { kind: string }) => {
@@ -41,11 +43,22 @@ const Widget = (props: AllWidgetProps<any>) => {
   const heroMapUrl = `${props.context.folderUrl}dist/runtime/assets/hero-bahia.jpg?v=1`
   const [revealed, setRevealed] = React.useState<Record<string, boolean>>({})
   const [activeApp, setActiveApp] = React.useState(0)
+  const [kind, setKind] = React.useState('')
+  const [query, setQuery] = React.useState('')
   const [dragPx, setDragPx] = React.useState(0)
   const [dragging, setDragging] = React.useState(false)
   const carouselPaused = React.useRef(false)
   const dragRef = React.useRef({ active: false, startX: 0, startY: 0, delta: 0, moved: false, axis: '', pointerType: 'mouse' })
-  const appCount = APPLICATIONS.length
+  const kinds = APPLICATIONS.reduce<string[]>((list, app) => (
+    list.includes(app.kind) ? list : list.concat(app.kind)
+  ), [])
+  const needle = query.trim().toLocaleLowerCase('pt-BR')
+  const apps = APPLICATIONS.filter((app) => {
+    if (kind && app.kind !== kind) return false
+    if (!needle) return true
+    return `${app.title} ${app.summary} ${app.kind}`.toLocaleLowerCase('pt-BR').includes(needle)
+  })
+  const appCount = apps.length
   const shiftMemory = React.useRef<Record<string, number>>({})
   const [, settleCarousel] = React.useState(0)
 
@@ -59,7 +72,7 @@ const Widget = (props: AllWidgetProps<any>) => {
   React.useLayoutEffect(() => {
     let jumped = false
     const next: Record<string, number> = {}
-    APPLICATIONS.forEach((app, index) => {
+    apps.forEach((app, index) => {
       const shift = shiftOf(index)
       const prev = shiftMemory.current[app.id]
       if (prev !== undefined && Math.abs(shift - prev) > 1) jumped = true
@@ -67,7 +80,22 @@ const Widget = (props: AllWidgetProps<any>) => {
     })
     shiftMemory.current = next
     if (jumped) settleCarousel((value) => value + 1)
-  }, [activeApp, appCount])
+  }, [activeApp, appCount, kind, query])
+
+  const resetCarousel = () => {
+    shiftMemory.current = {}
+    setActiveApp(0)
+  }
+
+  const chooseKind = (next: string) => {
+    resetCarousel()
+    setKind(next)
+  }
+
+  const changeQuery = (value: string) => {
+    resetCarousel()
+    setQuery(value)
+  }
 
   const show = (id: string, className: string) => {
     return `${className} mp-reveal${revealed[id] ? ' mp-reveal--in' : ''}`
@@ -143,8 +171,15 @@ const Widget = (props: AllWidgetProps<any>) => {
     document.getElementById('mp-apps')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  const openAbout = () => {
-    document.getElementById('mp-about')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const openSobrePage = () => {
+    const pages = getAppStore().getState()?.appConfig?.pages
+    if (!pages) return
+    const pageId = Object.keys(pages).find((id) => {
+      return String(pages[id]?.label || '').trim().toLowerCase() === 'sobre'
+    }) || (pages.page_2 ? 'page_2' : undefined)
+    if (!pageId) return
+    UrlManager.getInstance().changePage(pageId)
+    window.scrollTo({ top: 0, left: 0 })
   }
 
   React.useEffect(() => {
@@ -162,13 +197,18 @@ const Widget = (props: AllWidgetProps<any>) => {
   }, [])
 
   React.useEffect(() => {
+    if (window.jimuConfig?.isInBuilder) return undefined
     const hero = rootRef.current
     if (!hero) return undefined
 
     const touched: Array<{ el: HTMLElement, overflow: string }> = []
     let node = hero.parentElement
     while (node && node !== document.body) {
-      if (node.querySelector('.hp-header')) break
+      if (
+        node.classList.contains('page') ||
+        node.classList.contains('footer') ||
+        node.querySelector('.hp-header')
+      ) break
       const style = getComputedStyle(node)
       const clips = style.overflowX !== 'visible' || style.overflowY !== 'visible'
       if (clips) {
@@ -346,62 +386,13 @@ const Widget = (props: AllWidgetProps<any>) => {
                 <path d="M4 10h11M11 6l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
-            <button type="button" className="mp-hero__btn mp-hero__btn--ghost" onClick={openAbout}>
-              Conheça o Instituto
-              <svg viewBox="0 0 20 20" aria-hidden="true">
-                <path d="M10 4v12M4 10h12" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-              </svg>
-            </button>
           </div>
         </div>
       </div>
     </section>
 
     <section className="mp-about" id="mp-about" aria-labelledby="mp-about-title">
-      <ul className="mp-themes">
-        {[
-          {
-            title: 'Infraestrutura Hídrica',
-            text: 'Planos, obras e investimentos para a segurança hídrica.',
-            icon: 'drop'
-          },
-          {
-            title: 'Abastecimento de Água',
-            text: 'Sistemas que levam qualidade de vida às pessoas.',
-            icon: 'tap'
-          },
-          {
-            title: 'Esgotamento Sanitário',
-            text: 'Saneamento para cidades mais saudáveis.',
-            icon: 'city'
-          },
-          {
-            title: 'Atlas',
-            text: 'Informações geoespaciais e dados estratégicos.',
-            icon: 'book'
-          }
-        ].map((item) => (
-          <li key={item.title} className="mp-themes__card">
-            <span className="mp-themes__icon" aria-hidden="true">
-              {item.icon === 'drop' && (
-                <svg viewBox="0 0 24 24"><path d="M12 3s6 6.2 6 10.2A6 6 0 1 1 6 13.2C6 9.2 12 3 12 3z" fill="none" stroke="currentColor" strokeWidth="1.6" /></svg>
-              )}
-              {item.icon === 'tap' && (
-                <svg viewBox="0 0 24 24"><path d="M8 8V5.5A2.5 2.5 0 0 1 10.5 3H14M8 8h8v3a4 4 0 0 1-8 0V8zM12 15v6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
-              )}
-              {item.icon === 'city' && (
-                <svg viewBox="0 0 24 24"><path d="M4 20V9l5-3v14M9 20V6l6-3v17M15 20v-8h5v8M4 20h16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>
-              )}
-              {item.icon === 'book' && (
-                <svg viewBox="0 0 24 24"><path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v16H7.5A2.5 2.5 0 0 0 5 21.5V5.5zM5 19.2A2.5 2.5 0 0 1 7.5 17H19" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>
-              )}
-            </span>
-            <h3>{item.title}</h3>
-            <p>{item.text}</p>
-          </li>
-        ))}
-      </ul>
-
+      <LightWater motif="ripple" />
       <div className="mp-about__inner">
         <div
           className="mp-about__photo"
@@ -425,7 +416,7 @@ const Widget = (props: AllWidgetProps<any>) => {
             a mesma história, com a leitura geográfica que a gestão precisa para
             planejar, operar e decidir.
           </p>
-          <button type="button" className="mp-about__more" onClick={openApplications}>
+          <button type="button" className="mp-about__more" onClick={openSobrePage}>
             Saiba mais sobre o Portal
             <svg viewBox="0 0 20 20" aria-hidden="true">
               <path d="M4 10h11M11 6l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
@@ -475,6 +466,7 @@ const Widget = (props: AllWidgetProps<any>) => {
     </section>
 
     <section className="mp-apps" id="mp-apps" aria-labelledby="mp-apps-title">
+      <LightWater motif="contour" />
       <div
         className="mp-apps__inner"
         onMouseEnter={() => { carouselPaused.current = true }}
@@ -490,19 +482,54 @@ const Widget = (props: AllWidgetProps<any>) => {
           </div>
         </div>
 
+        <div className="mp-filters">
+          <label className="mp-search">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <circle cx="7" cy="7" r="4.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
+              <path d="M10.2 10.2 13.2 13.2" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
+            <input
+              type="search"
+              value={query}
+              placeholder="Pesquisar"
+              aria-label="Pesquisar aplicação"
+              onChange={(event) => changeQuery(event.target.value)}
+            />
+          </label>
+          <div className="mp-filters__kinds" role="group" aria-label="Filtrar pelo tipo da aplicação">
+          <button type="button" className={kind === '' ? 'is-on' : ''} aria-pressed={kind === ''} onClick={() => chooseKind('')}>
+            Todas
+          </button>
+          {kinds.map((item) => (
+            <button
+              key={item}
+              type="button"
+              className={kind === item ? 'is-on' : ''}
+              aria-pressed={kind === item}
+              onClick={() => chooseKind(item)}
+            >
+              {item}
+            </button>
+          ))}
+          </div>
+        </div>
+
+        {appCount === 0 && <p className="mp-filters__empty">Nenhuma aplicação encontrada.</p>}
+
+        {appCount > 0 && <>
         <div
-          className={`mp-carousel${dragging ? ' is-dragging' : ''}`}
+          className={`mp-carousel${appCount < 3 ? ' is-pair' : ''}${dragging ? ' is-dragging' : ''}`}
           data-reveal="apps-cards"
           style={{ '--drag': `${dragPx}px` } as React.CSSProperties}
-          onPointerDown={onCarouselPointerDown}
+          onPointerDown={appCount < 3 ? undefined : onCarouselPointerDown}
           onClickCapture={(event) => {
-            if (!dragRef.current.moved) return
+            if (appCount < 3 || !dragRef.current.moved) return
             event.preventDefault()
             event.stopPropagation()
             dragRef.current.moved = false
           }}
         >
-          {APPLICATIONS.map((app, index) => {
+          {apps.map((app, index) => {
             const shift = shiftOf(index)
             const distance = Math.abs(shift)
             const prev = shiftMemory.current[app.id]
@@ -520,7 +547,7 @@ const Widget = (props: AllWidgetProps<any>) => {
                 rel="noopener noreferrer"
                 onDragStart={(event) => event.preventDefault()}
                 onClick={(event) => {
-                  if (index === activeApp) return
+                  if (appCount < 3 || index === activeApp) return
                   event.preventDefault()
                   setActiveApp(index)
                 }}
@@ -570,8 +597,8 @@ const Widget = (props: AllWidgetProps<any>) => {
           })}
         </div>
 
-        <div className="mp-carousel__dots">
-          {APPLICATIONS.map((app, index) => (
+        {appCount >= 3 && <div className="mp-carousel__dots">
+          {apps.map((app, index) => (
             <button
               key={app.id}
               type="button"
@@ -581,9 +608,11 @@ const Widget = (props: AllWidgetProps<any>) => {
               onClick={() => setActiveApp(index)}
             />
           ))}
-        </div>
+        </div>}
+        </>}
       </div>
     </section>
+    <HomeInfo show={show} />
     </div>
   )
 }

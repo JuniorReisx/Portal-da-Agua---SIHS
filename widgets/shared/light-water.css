@@ -1,0 +1,173 @@
+.lw {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.lw--ripple span {
+  position: absolute;
+  left: -36px;
+  top: 18%;
+  border: 1px solid rgba(8, 146, 185, 0.22);
+  border-radius: 50%;
+}
+
+.lw--ripple span:nth-child(1) { width: 120px; height: 120px; }
+.lw--ripple span:nth-child(2) { width: 196px; height: 196px; margin: -38px 0 0 -38px; }
+.lw--ripple span:nth-child(3) {
+  left: auto;
+  top: auto;
+  right: 8%;
+  bottom: 14%;
+  width: 72px;
+  height: 72px;
+  margin: 0;
+  background: rgba(8, 146, 185, 0.06);
+}
+
+.lw--contour svg {
+  position: absolute;
+  right: -4%;
+  bottom: 8%;
+  width: min(520px, 46%);
+  height: 220px;
+}
+
+.lw--contour path {
+  fill: none;
+  stroke: rgba(8, 146, 185, 0.28);
+  stroke-width: 1.4;
+}
+
+.lw--contour path:nth-child(2) { stroke-width: 1.1; opacity: 0.7; }
+.lw--contour path:nth-child(3) { opacity: 0.55; }
+.lw--contour path:nth-child(4) { stroke-dasharray: 2 7; opacity: 0.8; }
+
+.lw--bubbles span {
+  position: absolute;
+  bottom: 8%;
+  border-radius: 50%;
+  background: rgba(8, 146, 185, 0.1);
+  border: 1px solid rgba(8, 146, 185, 0.22);
+  animation: lw-bubble 14s ease-in infinite;
+}
+
+.lw--bubbles span:nth-child(1) { left: 6%; width: 18px; height: 18px; }
+.lw--bubbles span:nth-child(2) { left: 14%; width: 10px; height: 10px; animation-delay: 3s; animation-duration: 16s; }
+.lw--bubbles span:nth-child(3) { right: 10%; left: auto; width: 26px; height: 26px; animation-delay: 1.2s; }
+.lw--bubbles span:nth-child(4) { right: 18%; left: auto; width: 12px; height: 12px; animation-delay: 4.4s; animation-duration: 12s; }
+.lw--bubbles span:nth-child(5) { left: 42%; width: 8px; height: 8px; animation-delay: 2.2s; animation-duration: 15s; }
+
+.lw--current svg {
+  position: absolute;
+  top: 6%;
+  right: -2%;
+  width: min(560px, 48%);
+  height: 240px;
+}
+
+.lw--current path {
+  fill: none;
+  stroke: rgba(8, 146, 185, 0.32);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.lw--current path:nth-child(2) { opacity: 0.65; }
+.lw--current path:nth-child(3) { stroke-dasharray: 5 9; opacity: 0.8; }
+
+.lw--dune svg {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 92px;
+}
+
+.lw--dune path:first-child { fill: rgba(176, 122, 48, 0.16); }
+.lw--dune path:last-child { fill: rgba(138, 96, 36, 0.1); }
+
+.lw--orbit span {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(8, 146, 185, 0.24);
+}
+
+.lw--orbit span:nth-child(1) {
+  width: 210px;
+  height: 210px;
+  right: -48px;
+  top: -60px;
+}
+
+.lw--orbit span:nth-child(2) {
+  width: 86px;
+  height: 86px;
+  left: 7%;
+  bottom: 12%;
+  background: rgba(8, 146, 185, 0.05);
+}
+
+.lw--orbit span:nth-child(3) {
+  width: 36px;
+  height: 36px;
+  left: 18%;
+  top: 22%;
+  border-style: dashed;
+}
+
+.lw--spray span,
+.lw--spray i {
+  position: absolute;
+  top: 22px;
+  left: 7%;
+  display: block;
+  width: 8px;
+  height: 12px;
+  border-radius: 50% 50% 50% 50% / 38% 38% 62% 62%;
+  background: rgba(8, 146, 185, 0.34);
+}
+
+.lw--spray span:nth-child(2) { left: calc(7% + 16px); top: 34px; width: 5px; height: 8px; opacity: 0.7; }
+.lw--spray span:nth-child(3) { left: calc(7% + 28px); top: 18px; width: 6px; height: 9px; }
+.lw--spray i {
+  top: 52px;
+  left: calc(7% + 6px);
+  width: 34px;
+  height: 10px;
+  border-radius: 50%;
+  background: none;
+  border: 1px solid rgba(8, 146, 185, 0.28);
+}
+
+.lw--grain span {
+  position: absolute;
+  right: 6%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(160, 112, 42, 0.38);
+}
+
+.lw--grain span:nth-child(1) { top: 18%; right: 8%; }
+.lw--grain span:nth-child(2) { top: 28%; right: 14%; width: 3px; height: 3px; }
+.lw--grain span:nth-child(3) { top: 36%; right: 9%; }
+.lw--grain span:nth-child(4) { top: 46%; right: 16%; width: 7px; height: 7px; opacity: 0.55; }
+.lw--grain span:nth-child(5) { top: 58%; right: 11%; }
+.lw--grain span:nth-child(6) { top: 68%; right: 18%; width: 3px; height: 3px; }
+.lw--grain span:nth-child(7) { top: 78%; right: 8%; width: 6px; height: 6px; }
+
+@keyframes lw-bubble {
+  0% { transform: translateY(16px); opacity: 0; }
+  18% { opacity: 1; }
+  100% { transform: translateY(-150px); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lw--bubbles span {
+    animation: none;
+    opacity: 0.7;
+  }
+}

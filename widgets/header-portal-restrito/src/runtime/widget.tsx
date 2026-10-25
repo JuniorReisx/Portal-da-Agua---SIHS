@@ -3,6 +3,7 @@ import './style.css'
 
 const HOME_PAGE_ID = 'page_45'
 const PORTAL_SITE_URL = 'https://portaldaagua.sihs.ba.gov.br/'
+const PUBLIC_PORTAL_URL = 'https://portaldaagua.sihs.ba.gov.br/portal/apps/experiencebuilder/experience/?id=6a467fd31cf1445aa87edcba2575de76'
 
 const getPages = () => getAppStore().getState()?.appConfig?.pages
 
@@ -139,8 +140,8 @@ const Widget = (props: AllWidgetProps<any>) => {
 
         <a
           className="hp-header__restricted"
-          href={PORTAL_SITE_URL}
-          aria-label="Voltar ao Portal da Água"
+          href={PUBLIC_PORTAL_URL}
+          aria-label="Abrir o Portal público"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M14 6H6v12h12v-8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />

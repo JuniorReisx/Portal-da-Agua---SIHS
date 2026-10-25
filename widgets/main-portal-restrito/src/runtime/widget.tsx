@@ -1,5 +1,7 @@
 import { React, type AllWidgetProps } from 'jimu-core'
 import { PROJETOS } from './projetos'
+import { bindWaterCursor } from '../../../shared/water-cursor'
+import LightWater from '../../../shared/light-water'
 import './style.css'
 
 const KindIcon = ({ kind }: { kind: string }) => {
@@ -33,13 +35,44 @@ const KindIcon = ({ kind }: { kind: string }) => {
   )
 }
 
+const PUBLIC_PORTAL_URL = 'https://portaldaagua.sihs.ba.gov.br/portal/apps/experiencebuilder/experience/?id=6a467fd31cf1445aa87edcba2575de76'
+
+const NOTAS = [
+  {
+    title: 'Uso interno',
+    text: 'As aplicações desta tela não entram na consulta pública. Elas ficam só para o trabalho da SIHS.'
+  },
+  {
+    title: 'Quem acessa',
+    text: 'Entra quem tem permissão concedida pela Secretaria de Infraestrutura Hídrica e Saneamento.'
+  },
+  {
+    title: 'O que continua público',
+    text: 'Reservatórios, poços, abastecimento e inventário seguem abertos no portal público.'
+  }
+]
+
 const Widget = (props: AllWidgetProps<any>) => {
+  const heroRef = React.useRef<HTMLElement>(null)
+  const canvasRef = React.useRef<HTMLCanvasElement>(null)
+  const cursorRef = React.useRef<HTMLDivElement>(null)
   const [ready, setReady] = React.useState(false)
   const [activeApp, setActiveApp] = React.useState(0)
+  const [kind, setKind] = React.useState('')
+  const [query, setQuery] = React.useState('')
   const [dragPx, setDragPx] = React.useState(0)
   const [dragging, setDragging] = React.useState(false)
   const dragRef = React.useRef({ active: false, startX: 0, startY: 0, delta: 0, moved: false, axis: '', pointerType: 'mouse' })
-  const appCount = PROJETOS.length
+  const kinds = PROJETOS.reduce<string[]>((list, app) => (
+    list.includes(app.kind) ? list : list.concat(app.kind)
+  ), [])
+  const needle = query.trim().toLocaleLowerCase('pt-BR')
+  const apps = PROJETOS.filter((app) => {
+    if (kind && app.kind !== kind) return false
+    if (!needle) return true
+    return `${app.title} ${app.summary} ${app.kind}`.toLocaleLowerCase('pt-BR').includes(needle)
+  })
+  const appCount = apps.length
   const shiftMemory = React.useRef<Record<string, number>>({})
   const [, settleCarousel] = React.useState(0)
 
@@ -53,7 +86,7 @@ const Widget = (props: AllWidgetProps<any>) => {
   React.useLayoutEffect(() => {
     let jumped = false
     const next: Record<string, number> = {}
-    PROJETOS.forEach((app, index) => {
+    apps.forEach((app, index) => {
       const shift = shiftOf(index)
       const prev = shiftMemory.current[app.id]
       if (prev !== undefined && Math.abs(shift - prev) > 1) jumped = true
@@ -61,7 +94,22 @@ const Widget = (props: AllWidgetProps<any>) => {
     })
     shiftMemory.current = next
     if (jumped) settleCarousel((value) => value + 1)
-  }, [activeApp, appCount])
+  }, [activeApp, appCount, kind, query])
+
+  const resetCarousel = () => {
+    shiftMemory.current = {}
+    setActiveApp(0)
+  }
+
+  const chooseKind = (next: string) => {
+    resetCarousel()
+    setKind(next)
+  }
+
+  const changeQuery = (value: string) => {
+    resetCarousel()
+    setQuery(value)
+  }
 
   const stepApp = (direction: number) => {
     setActiveApp((current) => (current + direction + appCount) % appCount)
@@ -140,11 +188,49 @@ const Widget = (props: AllWidgetProps<any>) => {
     setReady(true)
   }, [])
 
+  React.useEffect(() => {
+    const nodes = Array.from(document.querySelectorAll('.mr-page [data-reveal]'))
+    if (!nodes.length) return undefined
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      nodes.forEach((node) => node.classList.add('mr-reveal--in'))
+      return undefined
+    }
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return
+        entry.target.classList.add('mr-reveal--in')
+        observer.unobserve(entry.target)
+      })
+    }, { threshold: 0.22, rootMargin: '0px 0px -8% 0px' })
+    nodes.forEach((node) => observer.observe(node))
+    return () => observer.disconnect()
+  }, [])
+
+  React.useEffect(() => {
+    const hero = heroRef.current
+    const canvas = canvasRef.current
+    const cursor = cursorRef.current
+    if (!hero || !canvas || !cursor) return undefined
+    return bindWaterCursor(hero, canvas, cursor, 'mr-hero--water')
+  }, [])
+
   return (
     <div className="mr-page jimu-widget">
+      <header className="mr-hero" ref={heroRef}>
+        <canvas ref={canvasRef} className="mr-hero__trail" aria-hidden="true" />
+        <div ref={cursorRef} className="mr-water-cursor" aria-hidden="true" />
+        <div className="mr-hero__inner">
+          <p className="mr-hero__kicker mr-reveal" data-reveal="hero-kicker">Uso interno</p>
+          <h1 className="mr-reveal" data-reveal="hero-title">Área restrita da SIHS</h1>
+          <p className="mr-hero__lead mr-reveal" data-reveal="hero-lead">
+            Gestão interna da infraestrutura hídrica e do saneamento da Bahia.
+          </p>
+        </div>
+      </header>
       <section className="mr-apps" id="mr-apps" aria-labelledby="mr-apps-title">
+        <LightWater motif="spray" />
         <div className="mr-apps__inner">
-          <div className="mr-apps__head">
+          <div className="mr-apps__head mr-reveal" data-reveal="apps-head">
             <div>
               <p className="mr-apps__kicker">
                 <span />
@@ -154,6 +240,41 @@ const Widget = (props: AllWidgetProps<any>) => {
             </div>
           </div>
 
+          <div className="mr-filters">
+            <label className="mr-search">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <circle cx="7" cy="7" r="4.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
+                <path d="M10.2 10.2 13.2 13.2" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+              <input
+                type="search"
+                value={query}
+                placeholder="Pesquisar"
+                aria-label="Pesquisar aplicação"
+                onChange={(event) => changeQuery(event.target.value)}
+              />
+            </label>
+            <div className="mr-filters__kinds" role="group" aria-label="Filtrar pelo tipo da aplicação">
+            <button type="button" className={kind === '' ? 'is-on' : ''} aria-pressed={kind === ''} onClick={() => chooseKind('')}>
+              Todas
+            </button>
+            {kinds.map((item) => (
+              <button
+                key={item}
+                type="button"
+                className={kind === item ? 'is-on' : ''}
+                aria-pressed={kind === item}
+                onClick={() => chooseKind(item)}
+              >
+                {item}
+              </button>
+            ))}
+            </div>
+          </div>
+
+          {appCount === 0 && <p className="mr-filters__empty">Nenhuma aplicação encontrada.</p>}
+
+          {appCount > 0 && <>
           <div
             className={`mr-carousel${appCount < 3 ? ' is-pair' : ''}${dragging ? ' is-dragging' : ''}`}
             style={{ '--drag': `${dragPx}px` } as React.CSSProperties}
@@ -165,7 +286,7 @@ const Widget = (props: AllWidgetProps<any>) => {
               dragRef.current.moved = false
             }}
           >
-            {PROJETOS.map((app, index) => {
+            {apps.map((app, index) => {
               const shift = shiftOf(index)
               const distance = Math.abs(shift)
               const prev = shiftMemory.current[app.id]
@@ -199,6 +320,7 @@ const Widget = (props: AllWidgetProps<any>) => {
                       </svg>
                     </span>
                     <span className="mr-app__media">
+                      <span className="mr-app__use">Uso interno</span>
                       <img
                         className="mr-app__cover"
                         src={`${props.context.folderUrl}dist/runtime/assets/${app.image}`}
@@ -231,7 +353,7 @@ const Widget = (props: AllWidgetProps<any>) => {
           </div>
 
           {appCount >= 3 && <div className="mr-carousel__dots">
-            {PROJETOS.map((app, index) => (
+            {apps.map((app, index) => (
               <button
                 key={app.id}
                 type="button"
@@ -242,6 +364,33 @@ const Widget = (props: AllWidgetProps<any>) => {
               />
             ))}
           </div>}
+          </>}
+        </div>
+      </section>
+
+      <section className="mr-notes" aria-labelledby="mr-notes-title">
+        <LightWater motif="grain" />
+        <div className="mr-notes__inner">
+          <div className="mr-reveal" data-reveal="notes-head">
+            <p className="mr-notes__kicker">Antes de abrir</p>
+            <h2 id="mr-notes-title">Como esta área funciona</h2>
+          </div>
+          <ul>
+            {NOTAS.map((item, index) => (
+              <li
+                key={item.title}
+                className="mr-reveal"
+                data-reveal={`note-${index}`}
+                style={{ transitionDelay: `${index * 0.08}s` }}
+              >
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </li>
+            ))}
+          </ul>
+          <a className="mr-notes__public mr-reveal" data-reveal="notes-link" href={PUBLIC_PORTAL_URL}>
+            Abrir o portal público
+          </a>
         </div>
       </section>
     </div>
