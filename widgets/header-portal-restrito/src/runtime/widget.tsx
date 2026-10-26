@@ -1,4 +1,4 @@
-import { React, type AllWidgetProps, UrlManager, getAppStore } from 'jimu-core'
+import { React, type AllWidgetProps, UrlManager, getAppStore, SessionManager } from 'jimu-core'
 import './style.css'
 
 const HOME_PAGE_ID = 'page_45'
@@ -33,12 +33,25 @@ const scrollPageToTop = () => {
   document.body.scrollTo?.({ top: 0, left: 0, behavior })
 }
 
+const readSession = () => {
+  const user = getAppStore().getState()?.user
+  const username = user?.username ? String(user.username) : ''
+  let hasSession = false
+  try {
+    hasSession = !!SessionManager.getInstance().getMainSession()
+  } catch {
+    hasSession = false
+  }
+  return { signedIn: !!(username || hasSession), username }
+}
+
 const Widget = (props: AllWidgetProps<any>) => {
   const portalLogoUrl = `${props.context.folderUrl}dist/runtime/assets/portal.png`
   const heroLogoUrl = `${props.context.folderUrl}dist/runtime/assets/portal-hero.png`
   const brasaoUrl = `${props.context.folderUrl}dist/runtime/assets/brasao.png`
   const [scrolled, setScrolled] = React.useState(false)
   const scrolledRef = React.useRef(false)
+  const [session, setSession] = React.useState(readSession)
 
   React.useEffect(() => {
     const ENTER = 48
@@ -80,6 +93,21 @@ const Widget = (props: AllWidgetProps<any>) => {
       cancelAnimationFrame(frame)
     }
   }, [])
+
+  React.useEffect(() => {
+    const sync = () => {
+      const next = readSession()
+      setSession((current) => (
+        current.signedIn === next.signedIn && current.username === next.username ? current : next
+      ))
+    }
+    sync()
+    return getAppStore().subscribe(sync)
+  }, [])
+
+  const signOut = () => {
+    SessionManager.getInstance().signOut()
+  }
 
   const goHome = () => {
     const pageId =
@@ -138,17 +166,34 @@ const Widget = (props: AllWidgetProps<any>) => {
           </button>
         </div>
 
-        <a
-          className="hp-header__restricted"
-          href={PUBLIC_PORTAL_URL}
-          aria-label="Abrir o Portal público"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M14 6H6v12h12v-8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-            <path d="M10 14 18 6M13 6h5v5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <span className="hp-header__restricted-label">Portal público</span>
-        </a>
+        <div className="hp-header__actions">
+          <a
+            className="hp-header__restricted"
+            href={PUBLIC_PORTAL_URL}
+            aria-label="Abrir o Portal público"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M14 6H6v12h12v-8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+              <path d="M10 14 18 6M13 6h5v5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="hp-header__restricted-label">Portal público</span>
+          </a>
+          {session.signedIn && (
+            <button
+              type="button"
+              className="hp-header__logout"
+              onClick={signOut}
+              aria-label={session.username ? `Sair da conta de ${session.username}` : 'Sair'}
+              title="Sair"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M10 5H6v14h4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                <path d="M11 12h9M16 8l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span className="hp-header__restricted-label">Sair</span>
+            </button>
+          )}
+        </div>
       </header>
     </div>
   )

@@ -21,14 +21,6 @@ const PERGUNTAS = [
   {
     q: 'De onde vêm as informações?',
     a: 'Das bases da SIHS e de parceiros como CERB, Embasa, AGERSA, DNOCS, CODEVASF e CHESF. O portal segue em atualização.'
-  },
-  {
-    q: 'Não achei o que preciso. Como peço essa informação?',
-    a: 'Use o Serviço de Informação ao Cidadão, pela internet ou no mesmo endereço da secretaria. Também dá para falar com a Ouvidoria da SIHS pelo telefone (71) 3115-6222.'
-  },
-  {
-    q: 'O portal substitui o site da Secretaria?',
-    a: 'O portal mostra mapas e indicadores. Notícias, transparência, licitações e os canais oficiais ficam no site da SIHS.'
   }
 ]
 
@@ -75,49 +67,23 @@ const GLOSSARIO = [
   }
 ]
 
-const Faq = ({ show }: { show: (id: string, className: string) => string }) => {
-  const listRef = React.useRef<HTMLDivElement>(null)
-
-  const scrollByCard = (direction: number) => {
-    const list = listRef.current
-    if (!list) return
-    const card = list.querySelector<HTMLElement>('.mp-faq__card')
-    const distance = card ? card.offsetWidth + 16 : list.clientWidth * 0.8
-    list.scrollBy({ left: direction * distance, behavior: 'smooth' })
-  }
-
-  return (
-    <section className="mp-faq" aria-labelledby="mp-faq-title">
-      <div data-reveal="faq-head" className={show('faq-head', 'mp-faq__head')}>
-        <div>
-          <p className="mp-info__kicker">Ajuda</p>
-          <h2 id="mp-faq-title">Perguntas frequentes</h2>
-        </div>
-        <div className="mp-faq__nav">
-          <button type="button" className="mp-faq__arrow" aria-label="Ver perguntas anteriores" onClick={() => scrollByCard(-1)}>
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M10.2 3.4 5.6 8l4.6 4.6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          <button type="button" className="mp-faq__arrow" aria-label="Ver próximas perguntas" onClick={() => scrollByCard(1)}>
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M5.8 3.4 10.4 8l-4.6 4.6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        </div>
-      </div>
-      <div className={show('faq-list', 'mp-faq__list')} data-reveal="faq-list" ref={listRef} tabIndex={0}>
-        {PERGUNTAS.map((item, index) => (
-          <article className="mp-faq__card" key={item.q}>
-            <span>{String(index + 1).padStart(2, '0')}</span>
-            <h3>{item.q}</h3>
-            <p>{item.a}</p>
-          </article>
-        ))}
-      </div>
-    </section>
-  )
-}
+const Faq = ({ show }: { show: (id: string, className: string) => string }) => (
+  <section className="mp-faq" aria-labelledby="mp-faq-title">
+    <div data-reveal="faq-head" className={show('faq-head', 'mp-faq__head')}>
+      <p className="mp-info__kicker">Ajuda</p>
+      <h2 id="mp-faq-title">Perguntas frequentes</h2>
+    </div>
+    <div className={show('faq-list', 'mp-faq__list')} data-reveal="faq-list">
+      {PERGUNTAS.map((item, index) => (
+        <article className="mp-faq__card" key={item.q}>
+          <span>{String(index + 1).padStart(2, '0')}</span>
+          <h3>{item.q}</h3>
+          <p>{item.a}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+)
 
 const HomeInfo = ({ show }: { show: (id: string, className: string) => string }) => (
   <>
@@ -155,7 +121,7 @@ const HomeInfo = ({ show }: { show: (id: string, className: string) => string })
             >
               <dt>
                 <span>{String(index + 1).padStart(2, '0')}</span>
-                {item.termo}
+                <strong>{item.termo}</strong>
               </dt>
               <dd>{item.texto}</dd>
             </div>

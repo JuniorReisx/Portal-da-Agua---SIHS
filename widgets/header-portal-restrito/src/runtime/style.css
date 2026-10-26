@@ -248,15 +248,24 @@ a.hp-header__titles-btn {
   padding: 0 0.4rem 0 0.5rem;
 }
 
-.hp-header__restricted {
+.hp-header__actions {
   position: relative;
   z-index: 1;
   margin-left: auto;
   align-self: center;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 0.45rem;
   margin-right: 0.9rem;
+  flex-shrink: 0;
+}
+
+.hp-header__restricted,
+.hp-header__logout {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
   padding: 0.42rem 0.95rem;
   border-radius: 999px;
   border: 1px solid rgba(150, 205, 216, 0.55);
@@ -270,6 +279,7 @@ a.hp-header__titles-btn {
   white-space: nowrap;
   cursor: pointer;
   opacity: 1;
+  appearance: none;
   transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
 }
 
@@ -279,12 +289,18 @@ a.hp-header__titles-btn {
 .hp-header.jimu-widget a.hp-header__restricted:hover,
 .hp-header.jimu-widget a.hp-header__restricted:active,
 .hp-header.jimu-widget a.hp-header__restricted:focus,
-.hp-header.jimu-widget a.hp-header__restricted:focus-visible {
+.hp-header.jimu-widget a.hp-header__restricted:focus-visible,
+.hp-header.jimu-widget button.hp-header__logout,
+.hp-header.jimu-widget button.hp-header__logout:hover,
+.hp-header.jimu-widget button.hp-header__logout:focus,
+.hp-header.jimu-widget button.hp-header__logout:focus-visible,
+.hp-header.jimu-widget button.hp-header__logout:active {
   color: #ffffff;
   text-decoration: none;
 }
 
-.hp-header__restricted svg {
+.hp-header__restricted svg,
+.hp-header__logout svg {
   width: 15px;
   height: 15px;
   flex-shrink: 0;
@@ -292,7 +308,9 @@ a.hp-header__titles-btn {
 }
 
 .hp-header__restricted:hover,
-.hp-header__restricted:focus-visible {
+.hp-header__restricted:focus-visible,
+.hp-header__logout:hover,
+.hp-header__logout:focus-visible {
   background: rgba(8, 146, 185, 0.72);
   border-color: rgba(210, 244, 250, 0.95);
   box-shadow: 0 0 0 1px rgba(22, 166, 192, 0.45), 0 8px 18px rgba(3, 26, 40, 0.35);
@@ -303,7 +321,9 @@ a.hp-header__titles-btn {
 }
 
 .hp-header__restricted:hover svg,
-.hp-header__restricted:focus-visible svg {
+.hp-header__restricted:focus-visible svg,
+.hp-header__logout:hover svg,
+.hp-header__logout:focus-visible svg {
   transform: translateY(-2px);
 }
 
@@ -536,8 +556,7 @@ a.hp-header__link {
     white-space: normal;
   }
 
-  .hp-header__restricted {
-    flex-shrink: 0;
+  .hp-header__actions {
     margin-right: 0.6rem;
   }
 }
@@ -570,12 +589,17 @@ a.hp-header__link {
     height: 30px;
   }
 
-  .hp-header__restricted {
+  .hp-header__actions {
+    gap: 0.35rem;
+    margin-right: max(0.55rem, env(safe-area-inset-right));
+  }
+
+  .hp-header__restricted,
+  .hp-header__logout {
     width: 44px;
     height: 44px;
     justify-content: center;
     gap: 0;
-    margin-right: max(0.55rem, env(safe-area-inset-right));
     padding: 0;
     border-radius: 12px;
   }
@@ -596,7 +620,8 @@ a.hp-header__link {
 @media (prefers-reduced-motion: reduce) {
   .hp-header__link,
   .hp-header__brand,
-  .hp-header__restricted {
+  .hp-header__restricted,
+  .hp-header__logout {
     transition: none;
   }
 }
